@@ -32,9 +32,10 @@ JuliaProcessor::JuliaProcessor()
     outputImageSizeW = 256;
     outputImageSizeH = 256;
 
-    outputImage = new float[outputImageSizeW*outputImageSizeH]();
+    outputImage = new double[outputImageSizeW*outputImageSizeH]();
     
-    outputImage[5]=1;
+
+    //outputImage[5]=1;
     //outputImage = malloc(30*30*sizeof(float));
 
     //dataHistoryBuffer = new AudioSampleBuffer(outputImageSizeW, 60000);
@@ -88,10 +89,10 @@ void JuliaProcessor::setFile(String fullpath)
 	
 	String julia_bin_dir = input;
 	julia_bin_dir = julia_bin_dir.trimEnd();
-	julia_bin_dir += "/home/jvoigts/Documents/julia/bin";
+	julia_bin_dir += "/home/jvoigts/Documents/Github/julia/usr/bin/";
 	String julia_sys_dir = input;
 	julia_sys_dir = julia_sys_dir.trimEnd();
-	julia_sys_dir += "/home/jvoigts/Documents/julia/lib/julia/sys.so";
+	julia_sys_dir += "/home/jvoigts/Documents/Github/julia/usr/lib/julia/sys.so";
 	
 	const char* jbin = julia_bin_dir.toRawUTF8();
 	const char* jsys = julia_sys_dir.toRawUTF8();
@@ -134,7 +135,7 @@ void JuliaProcessor::setOutputImageSize(int W, int H)
         //dataHistoryBuffer->setSize(outputImageSizeW, outputImageSizeH, false, true, false);
         free(outputImage);
         //outputImage = malloc(W*H*sizeof(float));
-        outputImage = new float[W*H]();
+        outputImage = new double[W*H]();
         
         //outputImage[100]=0;
     }
@@ -233,22 +234,45 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
 	{
 		float* ptr = buffer.getWritePointer(n); // to perform in-place edits to the buffer
 		jl_array_t *x = jl_ptr_to_array_1d(array_type, ptr , buffer.getNumSamples(), 0);
-		//JL_GC_PUSH1(&x);
+	
 
-        //same thing for image
-        //float im[30*30]; // 30*30
-        //float *im = (float*)malloc(sizeof(float)*30*30);
-         jl_array_t *y =  jl_ptr_to_array_1d(array_type, outputImage , outputImageSizeW*outputImageSizeH, 0);
-        JL_GC_PUSH2(&x,&y);
-        //JL_GC_PUSH(&x);
+         jl_value_t *array_type_im = jl_apply_array_type(jl_float64_type, 2);
+        
+   
+        //jl_value_t *dims = jl_eval_string("(30,31)");
 
-		jl_call2(func, (jl_value_t*)x, (jl_value_t*)y);
-		
+        jl_function_t *tfunc = jl_get_function(jl_base_module, "tuple");
+        jl_value_t *a = jl_box_int32(outputImageSizeW);
+        jl_value_t *b = jl_box_int32(outputImageSizeH);
+        jl_value_t *dims = jl_call2(tfunc, a, b);
+
+
+        jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage ,  dims , 0);
+
+
+        // Get array pointer
+        double *p = (double*)jl_array_data(x);
+        // Get number of dimensions
+        int ndims = jl_array_ndims(x);
+        // Get the size of the i-th dim
+        size_t size0 = jl_array_dim(x,0);
+        size_t size1 = jl_array_dim(x,1);
+
+
+        JL_GC_PUSH2(&x,&jl_outputImage);
+
+		jl_call2(func, (jl_value_t*)x, (jl_value_t*)jl_outputImage);
+
+		outputImage = (double*)jl_array_data(jl_outputImage); // return output image
+        
         JL_GC_POP(); // image, and neural data (encoded spikes)
 	}
     // std::cout << im[0] << std::endl;
-	}
-
+	
+    
+    if (jl_exception_occurred())
+        printf("%s \n", jl_typeof_str(jl_exception_occurred()));
+}
 
 }
 
@@ -258,7 +282,7 @@ void JuliaProcessor::saveCustomParametersToXml(XmlElement* parentElement)
     childNode->setAttribute("path", getFile());
 }
 
-float JuliaProcessor::getIm(int index)
+double JuliaProcessor::getIm(int index)
 {
         return outputImage[index];
 }

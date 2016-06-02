@@ -50,7 +50,7 @@ JuliaEditor::JuliaEditor(GenericProcessor* parentNode, bool useDefaultParameterE
     fileNameLabel->setBounds(10,85+20,140,25);
     addAndMakeVisible(fileNameLabel);
 
-    outputImageSizeSelection = new Label("Out Im. Size","30"); 
+    outputImageSizeSelection = new Label("Out Im. Size","256"); 
     outputImageSizeSelection->setEditable(true,false,false);
     outputImageSizeSelection->addListener(this);
     outputImageSizeSelection->setBounds(120,60,60,20);
@@ -146,6 +146,7 @@ void JuliaEditor::labelTextChanged(Label* label)
 void JuliaEditor::saveEditorParameters(XmlElement* xml)
 {
     // XmlElement* fileName = xml->createNewChildElement("FILENAME");
+    //    {
     // fileName->addTextElement(lastFilePath.getFullPathName());
 }
 

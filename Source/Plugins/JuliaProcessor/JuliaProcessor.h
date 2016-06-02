@@ -25,6 +25,7 @@
 
 #include <ProcessorHeaders.h>
 #include <SpikeLib.h>
+#include <julia.h>
 
 /**
   Julia Processor.
@@ -57,10 +58,12 @@ public:
     bool enable();
     bool disable();
 
-    float getIm(int index);
+    double getIm(int index);
 
     //float im[30*30]; // for fast image/matrix output from julia code
-    float* outputImage;
+    double* outputImage;
+
+    
     int outputImageSizeW; 
     int outputImageSizeH;
 
