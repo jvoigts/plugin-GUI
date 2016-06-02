@@ -155,7 +155,7 @@ void JuliaProcessor::run_julia_string(String juliaString)
     jl_eval_string(jstr);
 
     if (jl_exception_occurred())
-    	printf("%s \n", jl_typeof_str(jl_exception_occurred()));
+    	printf("julia exception: %s \n", jl_typeof_str(jl_exception_occurred()));
 }
 
 
@@ -271,7 +271,7 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
 	
     
     if (jl_exception_occurred())
-        printf("%s \n", jl_typeof_str(jl_exception_occurred()));
+        printf("julia exception: %s \n", jl_typeof_str(jl_exception_occurred()));
 }
 
 }
