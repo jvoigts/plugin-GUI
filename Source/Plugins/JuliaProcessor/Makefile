@@ -11,11 +11,11 @@ SRC := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.cpp))
 OBJ := $(addprefix $(OBJDIR)/,$(notdir $(SRC:.cpp=.o)))
 
 
-JULIA =  /home/oe/Documents/julia/
+JULIA =  /home/jvoigts/Documents/julia/
 
 # flags to compile "JuliaProcessor". $(JULIA): toplevel of julia package
 CXXFLAGS += -I $(JULIA)/src -I $(JULIA)/src/support -I $(JULIA)/include/julia/
-LDFLAGS += -L $(JULIA)/lib/julia/ -Wl,-R $(JULIA)/lib -ljulia
+LDFLAGS += -L $(JULIA)/lib/julia/ -Wl,-R $(JULIA)/lib/julia -ljulia
 
 BLDCMD := $(CXX) -shared -o $(OUTDIR)/$(TARGET) $(OBJ) $(LDFLAGS) $(RESOURCES) $(TARGET_ARCH)
 

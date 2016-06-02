@@ -80,10 +80,10 @@ void JuliaProcessor::setFile(String fullpath)
 	
 	String julia_bin_dir = input;
 	julia_bin_dir = julia_bin_dir.trimEnd();
-	julia_bin_dir += "/home/oe/Documents/julia/bin";
+	julia_bin_dir += "/home/jvoigts/Documents/julia/bin";
 	String julia_sys_dir = input;
 	julia_sys_dir = julia_sys_dir.trimEnd();
-	julia_sys_dir += "/home/oe/Documents/julia/lib/julia/sys.so";
+	julia_sys_dir += "/home/jvoigts/Documents/julia/lib/julia/sys.so";
 	
 	const char* jbin = julia_bin_dir.toRawUTF8();
 	const char* jsys = julia_sys_dir.toRawUTF8();

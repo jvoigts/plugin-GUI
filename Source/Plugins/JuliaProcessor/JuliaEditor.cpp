@@ -98,7 +98,6 @@ void JuliaEditor::setFile(String file)
     juliaProcessor->setFile(fileToRead.getFullPathName());
     fileNameLabel->setText(fileToRead.getFileName(), dontSendNotification);
 
-
     // setEnabledState(true);
     // icon->setOpacity(1.0f); // tie this to hasJuliaInstance instead of just setting it!
     // repaint();
@@ -111,20 +110,18 @@ void JuliaEditor::buttonCallback(Button* button)
         if (button == fileButton)
         {
             //std::cout << "Button clicked." << std::endl;
-            //FileChooser chooseJuliaProcessorFile("Please select the file you want to load...",  lastFilePath, "*");
-
+            FileChooser chooseJuliaProcessorFile("Please select the file you want to load...",  lastFilePath, "*");
 
                 // file dialogs are screwed up in current xubuntu, so we'll do this for now.
-                setFile("/home/oe/Documents/plugin-GUI/Source/Plugins/JuliaProcessor/BOimg/spiketostim_oe.jl");
+                //setFile("/home/oe/Documents/plugin-GUI/Source/Plugins/JuliaProcessor/BOimg/spiketostim_oe.jl");
 
-
-          //  if (chooseJuliaProcessorFile.browseForFileToOpen())
+            if (chooseJuliaProcessorFile.browseForFileToOpen())
             {
                 // Use the selected file
-                //setFile(chooseJuliaProcessorFile.getResult().getFullPathName());
+                setFile(chooseJuliaProcessorFile.getResult().getFullPathName());
 
-                // lastFilePath = fileToRead.getParentDirectory();
-                // thread->setFile(fileToRead.getFullPathName());
+                lastFilePath = chooseJuliaProcessorFile.getResult().getParentDirectory();
+               //  setFile(fileToRead.getFullPathName());
                 // fileNameLabel->setText(fileToRead.getFileName(),false);
             }
         } 
