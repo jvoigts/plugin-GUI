@@ -58,8 +58,8 @@ private:
     ScopedPointer<UtilityButton> fileButton;
     ScopedPointer<UtilityButton> reloadFileButton;
     ScopedPointer<Label> fileNameLabel;
-    ScopedPointer<Label> bufferSizeSelection;
-    ScopedPointer<Label> bufferSizeSelectionLabel;
+    ScopedPointer<Label> outputImageSizeSelection;
+    ScopedPointer<Label> outputImageSizeSelectionLabel;
     JuliaProcessor* juliaProcessor;
     File lastFilePath;
 

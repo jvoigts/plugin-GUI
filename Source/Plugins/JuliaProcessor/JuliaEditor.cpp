@@ -32,7 +32,7 @@ JuliaEditor::JuliaEditor(GenericProcessor* parentNode, bool useDefaultParameterE
 {
     juliaProcessor = (JuliaProcessor*) parentNode;
 
-    tabText = "J-pizzle";
+    tabText = "Julia plugin image display";
 
     lastFilePath = File::getCurrentWorkingDirectory();
 
@@ -50,16 +50,16 @@ JuliaEditor::JuliaEditor(GenericProcessor* parentNode, bool useDefaultParameterE
     fileNameLabel->setBounds(10,85+20,140,25);
     addAndMakeVisible(fileNameLabel);
 
-    bufferSizeSelection = new Label("Buffer Size","30000"); // this is currently set in RHD2000Thread, the cleaner would be to set it here again
-    bufferSizeSelection->setEditable(true,false,false);
-    bufferSizeSelection->addListener(this);
-    bufferSizeSelection->setBounds(120,60,60,20);
-    bufferSizeSelection->setColour(Label::textColourId, Colours::darkgrey);
-    addAndMakeVisible(bufferSizeSelection);
+    outputImageSizeSelection = new Label("Out Im. Size","30"); 
+    outputImageSizeSelection->setEditable(true,false,false);
+    outputImageSizeSelection->addListener(this);
+    outputImageSizeSelection->setBounds(120,60,60,20);
+    outputImageSizeSelection->setColour(Label::textColourId, Colours::black);
+    addAndMakeVisible(outputImageSizeSelection);
 
-    bufferSizeSelectionLabel = new Label("","NBuf.:");
-    bufferSizeSelectionLabel->attachToComponent (bufferSizeSelection,true);
-    addAndMakeVisible(bufferSizeSelectionLabel);
+    outputImageSizeSelectionLabel = new Label("","OutIm. Size.:");
+    outputImageSizeSelectionLabel->attachToComponent (outputImageSizeSelection,true);
+    addAndMakeVisible(outputImageSizeSelectionLabel);
 
     // Image im;
     // im = ImageCache::getFromMemory(BinaryData::JuliaIconActive_png,
@@ -118,11 +118,8 @@ void JuliaEditor::buttonCallback(Button* button)
             if (chooseJuliaProcessorFile.browseForFileToOpen())
             {
                 // Use the selected file
-                setFile(chooseJuliaProcessorFile.getResult().getFullPathName());
-
-                lastFilePath = chooseJuliaProcessorFile.getResult().getParentDirectory();
-               //  setFile(fileToRead.getFullPathName());
-                // fileNameLabel->setText(fileToRead.getFileName(),false);
+                setFile(chooseJuliaProcessorFile.getResult().getFullPathName());                
+               
             }
         } 
         if (button == reloadFileButton)
@@ -136,10 +133,12 @@ void JuliaEditor::labelTextChanged(Label* label)
 {
     if (!acquisitionIsActive)
     {
-        if (label == bufferSizeSelection)
+        if (label == outputImageSizeSelection)
         {
             Value val = label->getTextValue();
-            juliaProcessor->setBuffersize(int(val.getValue()));
+            juliaProcessor->setOutputImageSize( int(val.getValue()), int(val.getValue()) ); // xxx make into W and H
+            resized();
+            repaint();
         }
     }
 }
@@ -216,8 +215,10 @@ void JuliaEditorCanvas::paint(Graphics& g)
 {
     g.fillAll(Colours::grey);
 
-    float numXPixels = 30;
-    float numYPixels = 30;
+    float numXPixels = processor->outputImageSizeW;
+    float numYPixels = processor->outputImageSizeH;
+
+    //std::cout << "got " << numXPixels << " x " << numYPixels << " size" <<std::endl;
 
     float xHeight = getWidth()/numXPixels;
     float yHeight = getHeight()/numYPixels;
@@ -227,17 +228,13 @@ void JuliaEditorCanvas::paint(Graphics& g)
             for (int m = 0; m < numYPixels; m++)
             {
                 //float c = random.nextFloat()*255;
-                float c = processor->getIm(m+(n*30))*255;
+                float c = processor->getIm(m+(n*processor->outputImageSizeW))*255;
                 
-
                 g.setColour(Colour(c,c,c));
-
                 g.fillRect(n*xHeight, m*yHeight, xHeight, yHeight);
-
 
             }
         }
-
 }
     
 void JuliaEditorCanvas::refresh()

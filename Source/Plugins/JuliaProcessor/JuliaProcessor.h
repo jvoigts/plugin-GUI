@@ -45,7 +45,7 @@ public:
     void reloadFile();
     void process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
     void setParameter(int parameterIndex, float newValue);
-    void setBuffersize(int bufferSize);
+    void setOutputImageSize(int W, int H);
     AudioProcessorEditor* createEditor();
     bool hasEditor() const
     {
@@ -59,14 +59,18 @@ public:
 
     float getIm(int index);
 
-    float im[30*30];
+    //float im[30*30]; // for fast image/matrix output from julia code
+    float* outputImage;
+    int outputImageSizeW; 
+    int outputImageSizeH;
 
 private:
     bool hasJuliaInstance;
     String filePath;
-    int dataHistoryBufferSize;
-    int dataHistoryBufferNumChannels; 
-    AudioSampleBuffer* dataHistoryBuffer;
+    
+
+
+    //AudioSampleBuffer* dataHistoryBuffer;
     void run_julia_string(String juliaString);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JuliaProcessor);

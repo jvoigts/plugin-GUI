@@ -29,17 +29,25 @@ JuliaProcessor::JuliaProcessor()
     : GenericProcessor("Julia Processor")
 {
 	hasJuliaInstance = false;
-    dataHistoryBufferNumChannels = 256;
-    dataHistoryBuffer = new AudioSampleBuffer(dataHistoryBufferNumChannels, 60000);
-    dataHistoryBuffer->clear();
+    outputImageSizeW = 256;
+    outputImageSizeH = 256;
+
+    outputImage = new float[outputImageSizeW*outputImageSizeH]();
+    
+    outputImage[5]=1;
+    //outputImage = malloc(30*30*sizeof(float));
+
+    //dataHistoryBuffer = new AudioSampleBuffer(outputImageSizeW, 60000);
+    //dataHistoryBuffer->clear();
 
 
 }
 
 JuliaProcessor::~JuliaProcessor()
 {
+    free(outputImage);
 	jl_atexit_hook(0);
-	deleteAndZero(dataHistoryBuffer);
+	//deleteAndZero(dataHistoryBuffer);
 }
 
 AudioProcessorEditor* JuliaProcessor::createEditor()
@@ -98,7 +106,8 @@ void JuliaProcessor::reloadFile()
 {
     if (hasJuliaInstance) 
     {
-        String juliaString = "reload(\"" + filePath + "\")";
+        //String juliaString = "reload(\"" + filePath + "\")"; // doenst seem to work? include does the job though
+        String juliaString = "include(\"" + filePath + "\")";
         run_julia_string(juliaString);
     }
     else
@@ -113,17 +122,25 @@ void JuliaProcessor::setParameter(int parameterIndex, float newValue)
     editor->updateParameterButtons(parameterIndex);
 }
 
-void JuliaProcessor::setBuffersize(int bufferSize)
+void JuliaProcessor::setOutputImageSize(int W, int H)
 {
-    if (bufferSize > 1)
+    if (W > 0 && H >0)
     {
-        dataHistoryBufferSize=bufferSize;
-        printf("Setting history buffer size to %d samples \n", dataHistoryBufferSize);
-        dataHistoryBuffer->setSize(dataHistoryBufferNumChannels, dataHistoryBufferSize, false, true, false);
+        //outputImageSizeH=bufferSize;
+        printf("Setting output image size to %d X %d pixels \n", W,H);
+        outputImageSizeW = W;
+        outputImageSizeH = H;
+
+        //dataHistoryBuffer->setSize(outputImageSizeW, outputImageSizeH, false, true, false);
+        free(outputImage);
+        //outputImage = malloc(W*H*sizeof(float));
+        outputImage = new float[W*H]();
+        
+        //outputImage[100]=0;
     }
     else 
     {
-        printf("History buffer size has to be at least 1");
+        printf("Image size has to be at least 1x1");
     }
 }
 
@@ -221,7 +238,7 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
         //same thing for image
         //float im[30*30]; // 30*30
         //float *im = (float*)malloc(sizeof(float)*30*30);
-         jl_array_t *y =  jl_ptr_to_array_1d(array_type, im , 30*30, 0);
+         jl_array_t *y =  jl_ptr_to_array_1d(array_type, outputImage , outputImageSizeW*outputImageSizeH, 0);
         JL_GC_PUSH2(&x,&y);
         //JL_GC_PUSH(&x);
 
@@ -243,7 +260,7 @@ void JuliaProcessor::saveCustomParametersToXml(XmlElement* parentElement)
 
 float JuliaProcessor::getIm(int index)
 {
-    return im[index];
+        return outputImage[index];
 }
 
 void JuliaProcessor::loadCustomParametersFromXml()
