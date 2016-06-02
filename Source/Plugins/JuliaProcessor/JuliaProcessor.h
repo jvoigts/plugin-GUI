@@ -24,6 +24,7 @@
 #define JULIAPROCESSOR_H_INCLUDED
 
 #include <ProcessorHeaders.h>
+#include <SpikeLib.h>
 
 /**
   Julia Processor.
@@ -52,6 +53,13 @@ public:
     }
     void saveCustomParametersToXml(XmlElement* parentElement);
     void loadCustomParametersFromXml();
+
+    bool enable();
+    bool disable();
+
+    float getIm(int index);
+
+    float im[30*30];
 
 private:
     bool hasJuliaInstance;

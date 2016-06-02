@@ -23,6 +23,9 @@
 #ifndef JULIAEDITOR_H_INCLUDED
 #define JULIAEDITOR_H_INCLUDED
 
+#include <VisualizerEditorHeaders.h>
+#include <VisualizerWindowHeaders.h>
+
 #include <EditorHeaders.h>
 
 //class ImageIcon;
@@ -36,18 +39,20 @@ class JuliaProcessor;
 
 */
 
-class JuliaEditor : public GenericEditor, public Label::Listener
+class JuliaEditor : public VisualizerEditor, public Label::Listener
 
 {
 public:
     JuliaEditor(GenericProcessor* parentNode, bool useDefaultParameterEditors);
     virtual ~JuliaEditor();
-    void buttonEvent(Button* button);
+    void buttonCallback(Button* button);
     void labelTextChanged(Label* te);
     void setFile(String file);
     void saveEditorParameters(XmlElement*);
     void loadEditorParameters(XmlElement*);
     ImageIcon* icon;
+
+    Visualizer* createNewCanvas();
 
 private:
     ScopedPointer<UtilityButton> fileButton;
@@ -58,7 +63,40 @@ private:
     JuliaProcessor* juliaProcessor;
     File lastFilePath;
 
+
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JuliaEditor);
+};
+
+class JuliaEditorCanvas : public Visualizer
+{
+public:
+    JuliaEditorCanvas(JuliaProcessor* n);
+    ~JuliaEditorCanvas();
+    
+    void beginAnimation();
+    void endAnimation();
+    
+    void refreshState();
+    void update();
+    
+    void setParameter(int, float);
+    void setParameter(int, int, int, float) {}
+    
+    void paint(Graphics& g);
+
+    void refresh();
+    
+    void resized();
+
+    float im[30*30];
+
+    
+private:
+    JuliaProcessor* processor;
+
+    Random random;
+
 };
 
 #endif  // JULIAEDITOR_H_INCLUDED

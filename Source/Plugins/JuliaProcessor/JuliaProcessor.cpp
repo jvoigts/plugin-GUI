@@ -32,6 +32,8 @@ JuliaProcessor::JuliaProcessor()
     dataHistoryBufferNumChannels = 256;
     dataHistoryBuffer = new AudioSampleBuffer(dataHistoryBufferNumChannels, 60000);
     dataHistoryBuffer->clear();
+
+
 }
 
 JuliaProcessor::~JuliaProcessor()
@@ -47,6 +49,26 @@ AudioProcessorEditor* JuliaProcessor::createEditor()
     return editor;
 }
 
+
+bool JuliaProcessor::enable()
+{
+    std::cout << "julia::enable()" << std::endl;
+    JuliaEditor* editor = (JuliaEditor*) getEditor();
+
+    editor->enable();
+    return true;
+
+}
+
+bool JuliaProcessor::disable()
+{
+    std::cout << "julia disabled!" << std::endl;
+    JuliaEditor* editor = (JuliaEditor*) getEditor();
+    editor->disable();
+    return true;
+}
+
+
 void JuliaProcessor::setFile(String fullpath)
 {
 	hasJuliaInstance = true;
@@ -58,10 +80,10 @@ void JuliaProcessor::setFile(String fullpath)
 	
 	String julia_bin_dir = input;
 	julia_bin_dir = julia_bin_dir.trimEnd();
-	julia_bin_dir += "/home/jvoigts/Documents/Github/julia/usr/bin";
+	julia_bin_dir += "/home/oe/Documents/julia/bin";
 	String julia_sys_dir = input;
 	julia_sys_dir = julia_sys_dir.trimEnd();
-	julia_sys_dir += "/home/jvoigts/Documents/Github/julia/usr/lib/julia/sys.so";
+	julia_sys_dir += "/home/oe/Documents/julia/lib/julia/sys.so";
 	
 	const char* jbin = julia_bin_dir.toRawUTF8();
 	const char* jsys = julia_sys_dir.toRawUTF8();
@@ -128,27 +150,100 @@ String JuliaProcessor::getFile()
 void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
 	if (hasJuliaInstance)
-	{
-		jl_function_t *func = jl_get_function(jl_main_module, "oe_process!");    
-	
-		// create 2D array of float64 type
-		jl_value_t *array_type = jl_apply_array_type(jl_float32_type, 1); // last arg is nDims
+    {
 
-		for (int n = 0; n < getNumOutputs(); n++)
-		{
-			float* ptr = buffer.getWritePointer(n); // to perform in-place edits to the buffer
-			jl_array_t *x = jl_ptr_to_array_1d(array_type, ptr , buffer.getNumSamples(), 0);
-			JL_GC_PUSH1(&x);
-			jl_call1(func, (jl_value_t*)x);
-			JL_GC_POP();
-		}
+    buffer.clear();
+
+    // populate sampled channels with spikes from sorter
+    if (midiMessages.getNumEvents() > 0)
+    {
+
+        // int m = midiMessages.getNumEvents();
+        //std::cout << m << " events received by node " << getNodeId() << std::endl;
+
+        MidiBuffer::Iterator i(midiMessages);
+        MidiMessage message(0xf4);
+
+        int samplePosition = 0;
+        i.setNextSamplePosition(samplePosition);
+
+        while (i.getNextEvent(message, samplePosition))
+        {
+
+            const uint8* dataptr = message.getRawData();
+
+           // handleEvent(*dataptr, message, samplePosition);
+
+            int bufferSize = message.getRawDataSize();
+
+            if (bufferSize > 0 && dataptr[0]==SPIKE)
+            {
+
+                SpikeObject newSpike;
+
+                bool isValid = unpackSpike(&newSpike, dataptr, bufferSize);
+
+                if (isValid)
+                {
+                    int electrodeNum = newSpike.source;
+
+                    //Electrode& e = electrodes.getReference(electrodeNum);
+                    // std::cout << electrodeNum << std::endl;
+
+                    // select if spike is of interest
+
+                    //if (electrodeNum==1){
+                    buffer.setSample(electrodeNum,samplePosition,1);
+                    //}
+
+                }
+
+            }
+
+
+        }
+
+    }
+
+    // send data to julia
+	jl_function_t *func = jl_get_function(jl_main_module, "oe_process!");    
+
+	// create 1D array of float32 type
+	jl_value_t *array_type = jl_apply_array_type(jl_float32_type, 1); // last arg is nDims
+
+	//for (int n = 0; n < getNumOutputs(); n++)
+    int n=0; // only operate on 1st chyannel for now - switch to 2d array later
+	{
+		float* ptr = buffer.getWritePointer(n); // to perform in-place edits to the buffer
+		jl_array_t *x = jl_ptr_to_array_1d(array_type, ptr , buffer.getNumSamples(), 0);
+		//JL_GC_PUSH1(&x);
+
+        //same thing for image
+        //float im[30*30]; // 30*30
+        //float *im = (float*)malloc(sizeof(float)*30*30);
+         jl_array_t *y =  jl_ptr_to_array_1d(array_type, im , 30*30, 0);
+        JL_GC_PUSH2(&x,&y);
+        //JL_GC_PUSH(&x);
+
+		jl_call2(func, (jl_value_t*)x, (jl_value_t*)y);
+		
+        JL_GC_POP(); // image, and neural data (encoded spikes)
 	}
+    // std::cout << im[0] << std::endl;
+	}
+
+
 }
 
 void JuliaProcessor::saveCustomParametersToXml(XmlElement* parentElement)
 {
     XmlElement* childNode = parentElement->createNewChildElement("FILENAME");
     childNode->setAttribute("path", getFile());
+}
+
+float JuliaProcessor::getIm(int index)
+{
+    return im[index];
 }
 
 void JuliaProcessor::loadCustomParametersFromXml()

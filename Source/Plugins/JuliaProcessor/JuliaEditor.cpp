@@ -20,14 +20,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+// start with  sudo LD_LIBRARY_PATH=/home/oe/Documents/julia/lib/julia/ ./build/open-ephys 
+
 #include "JuliaEditor.h"
 #include "JuliaProcessor.h"
 #include <stdio.h>
  
 JuliaEditor::JuliaEditor(GenericProcessor* parentNode, bool useDefaultParameterEditors=true)
-    : GenericEditor(parentNode, useDefaultParameterEditors)
+    : VisualizerEditor(parentNode, useDefaultParameterEditors)
 {
     juliaProcessor = (JuliaProcessor*) parentNode;
+
+    tabText = "J-pizzle";
 
     lastFilePath = File::getCurrentWorkingDirectory();
 
@@ -75,6 +80,17 @@ JuliaEditor::~JuliaEditor()
 
 }
 
+
+Visualizer* JuliaEditor::createNewCanvas()
+{
+    
+    JuliaProcessor* processor = (JuliaProcessor*) getProcessor();
+    canvas = new JuliaEditorCanvas(processor);
+    return canvas;
+    
+}
+
+
 void JuliaEditor::setFile(String file)
 {
     File fileToRead(file);
@@ -88,7 +104,7 @@ void JuliaEditor::setFile(String file)
     // repaint();
 }
 
-void JuliaEditor::buttonEvent(Button* button)
+void JuliaEditor::buttonCallback(Button* button)
 {
     if (!acquisitionIsActive)
     {
@@ -99,7 +115,7 @@ void JuliaEditor::buttonEvent(Button* button)
 
 
                 // file dialogs are screwed up in current xubuntu, so we'll do this for now.
-                setFile("/home/jvoigts/Documents/Github/plugin-GUI/Source/Plugins/JuliaProcessor/exampleProcessor.jl");
+                setFile("/home/oe/Documents/plugin-GUI/Source/Plugins/JuliaProcessor/BOimg/spiketostim_oe.jl");
 
 
           //  if (chooseJuliaProcessorFile.browseForFileToOpen())
@@ -148,4 +164,98 @@ void JuliaEditor::loadEditorParameters(XmlElement* xml)
     //           fileNameLabel->setText(lastFilePath.getFullPathName(),false);
     //       }
     //   }
+}
+
+
+JuliaEditorCanvas::JuliaEditorCanvas(JuliaProcessor* sr) : processor(sr)
+{
+
+    //rfMaps.clear();
+}
+
+
+JuliaEditorCanvas::~JuliaEditorCanvas(){
+    
+}
+    
+void JuliaEditorCanvas::beginAnimation()
+{
+    startCallbacks();
+    std::cout << "Julia editor canvas beginning animation." << std::endl;
+
+}
+
+void JuliaEditorCanvas::endAnimation()
+{
+    stopCallbacks();
+}
+    
+void JuliaEditorCanvas::refreshState()
+{
+}
+
+void JuliaEditorCanvas::update()
+{
+   // int nMaps = processor->getNumElectrodes();
+
+   // clearRfMaps();
+
+   // for (int i = 0; i < nMaps; i++)
+   // {
+   //     RFMap* rf = addRFMap(i);
+   //     processor->addRFMapForElectrode(rf, i);
+   // }
+
+    //addAndMakeVisible(rfMaps[currentMap]);
+
+    resized();
+    repaint();
+
+}
+    
+void JuliaEditorCanvas::setParameter(int, float) {}
+
+void JuliaEditorCanvas::paint(Graphics& g)
+{
+    g.fillAll(Colours::grey);
+
+    float numXPixels = 30;
+    float numYPixels = 30;
+
+    float xHeight = getWidth()/numXPixels;
+    float yHeight = getHeight()/numYPixels;
+
+        for (int n = 0; n < numXPixels; n++)
+        {
+            for (int m = 0; m < numYPixels; m++)
+            {
+                //float c = random.nextFloat()*255;
+                float c = processor->getIm(m+(n*30))*255;
+                
+
+                g.setColour(Colour(c,c,c));
+
+                g.fillRect(n*xHeight, m*yHeight, xHeight, yHeight);
+
+
+            }
+        }
+
+}
+    
+void JuliaEditorCanvas::refresh()
+{
+    //processor->setParameter(2, 0.0f); // request redraw
+    
+    repaint();
+
+    //::cout << "Refresh" << std::endl;
+}
+    
+void JuliaEditorCanvas::resized()
+{
+   // if (rfMaps.size() > 0)
+   //     rfMaps[currentMap]->setBounds(0, 0, getWidth(), getHeight());
+
+    repaint();
 }
