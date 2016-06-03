@@ -237,8 +237,8 @@ void JuliaEditorCanvas::paint(Graphics& g)
 
     //std::cout << "got " << numXPixels << " x " << numYPixels << " size" <<std::endl;
 
-    float xHeight = getWidth()/processor->outputImageSizeW;
-    float yHeight = getHeight()/processor->outputImageSizeH;
+    float xHeight = (float)getWidth()/(float)processor->outputImageSizeW;
+    float yHeight = (float)getHeight()/(float)processor->outputImageSizeH;
 
         for (int n = 0; n < processor->outputImageSizeW; n++)
         {
@@ -248,7 +248,7 @@ void JuliaEditorCanvas::paint(Graphics& g)
                 float c = processor->getIm(m+(n*processor->outputImageSizeH))*255;
                 
                 g.setColour(Colour(c,c,c));
-                g.fillRect(n*xHeight, m*yHeight, xHeight, yHeight);
+                g.fillRect(n*xHeight, m*yHeight, ceil(xHeight), ceil(yHeight)); // make pixels slightly larger so there's no visible boundaries due to limited precision
 
             }
         }
