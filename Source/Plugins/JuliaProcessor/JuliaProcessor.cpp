@@ -237,21 +237,23 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
    
         //jl_value_t *dims = jl_eval_string("(30,31)");
 
+         // make tuple for dimensions
         jl_function_t *tfunc = jl_get_function(jl_base_module, "tuple");
-        jl_value_t *a = jl_box_int32(outputImageSizeW);
-        jl_value_t *b = jl_box_int32(outputImageSizeH);
+        jl_value_t *a = jl_box_int32(outputImageSizeH);
+        jl_value_t *b = jl_box_int32(outputImageSizeW);
         jl_value_t *dims = jl_call2(tfunc, a, b);
 
+        // wrap array for julia
         jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage , dims , 0);
 
 
         // Get array pointer
-        double *p = (double*)jl_array_data(x);
+        //double *p = (double*)jl_array_data(x);
         // Get number of dimensions
-        int ndims = jl_array_ndims(x);
+        //int ndims = jl_array_ndims(x);
         // Get the size of the i-th dim
-        size_t size0 = jl_array_dim(x,0);
-        size_t size1 = jl_array_dim(x,1);
+        //size_t size0 = jl_array_dim(x,0);
+        //size_t size1 = jl_array_dim(x,1);
 
 
         JL_GC_PUSH2(&x,&jl_outputImage);
