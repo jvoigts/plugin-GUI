@@ -50,16 +50,28 @@ JuliaEditor::JuliaEditor(GenericProcessor* parentNode, bool useDefaultParameterE
     fileNameLabel->setBounds(10,85+20,140,25);
     addAndMakeVisible(fileNameLabel);
 
-    outputImageSizeSelection = new Label("Out Im. Size","256"); 
-    outputImageSizeSelection->setEditable(true,false,false);
-    outputImageSizeSelection->addListener(this);
-    outputImageSizeSelection->setBounds(120,60,60,20);
-    outputImageSizeSelection->setColour(Label::textColourId, Colours::black);
-    addAndMakeVisible(outputImageSizeSelection);
+    outputImageSizeSelectionW = new Label("Out Im. Size","256"); 
+    outputImageSizeSelectionW->setEditable(true,false,false);
+    outputImageSizeSelectionW->addListener(this);
+    outputImageSizeSelectionW->setBounds(90,60,40,20);
+    outputImageSizeSelectionW->setColour(Label::textColourId, Colours::black);
+    addAndMakeVisible(outputImageSizeSelectionW);
 
-    outputImageSizeSelectionLabel = new Label("","OutIm. Size.:");
-    outputImageSizeSelectionLabel->attachToComponent (outputImageSizeSelection,true);
-    addAndMakeVisible(outputImageSizeSelectionLabel);
+    outputImageSizeSelectionWLabel = new Label("","OutImSize:");
+    outputImageSizeSelectionWLabel->attachToComponent (outputImageSizeSelectionW,true);
+    addAndMakeVisible(outputImageSizeSelectionWLabel);
+
+    outputImageSizeSelectionH = new Label("Out Im. Size","256"); 
+    outputImageSizeSelectionH->setEditable(true,false,false);
+    outputImageSizeSelectionH->addListener(this);
+    outputImageSizeSelectionH->setBounds(140,60,40,20);
+    outputImageSizeSelectionH->setColour(Label::textColourId, Colours::black);
+    addAndMakeVisible(outputImageSizeSelectionH);
+
+    outputImageSizeSelectionHLabel = new Label("","X");
+    outputImageSizeSelectionHLabel->attachToComponent (outputImageSizeSelectionH,true);
+    addAndMakeVisible(outputImageSizeSelectionHLabel);
+
 
     // Image im;
     // im = ImageCache::getFromMemory(BinaryData::JuliaIconActive_png,
@@ -121,7 +133,8 @@ void JuliaEditor::buttonCallback(Button* button)
                 setFile(chooseJuliaProcessorFile.getResult().getFullPathName());                
                
             }
-        } 
+        }
+
         if (button == reloadFileButton)
         {
             juliaProcessor->reloadFile();
@@ -133,13 +146,19 @@ void JuliaEditor::labelTextChanged(Label* label)
 {
     if (!acquisitionIsActive)
     {
-        if (label == outputImageSizeSelection)
+        if (label == outputImageSizeSelectionW)
         {
             Value val = label->getTextValue();
-            juliaProcessor->setOutputImageSize( int(val.getValue()), int(val.getValue()) ); // xxx make into W and H
+            juliaProcessor->setOutputImageSize( int(val.getValue()), 0 );
+        }
+        if (label == outputImageSizeSelectionH)
+        {
+            Value val = label->getTextValue();
+            juliaProcessor->setOutputImageSize( 0, int(val.getValue()) );
+        }
+
             resized();
             repaint();
-        }
     }
 }
 
@@ -216,20 +235,17 @@ void JuliaEditorCanvas::paint(Graphics& g)
 {
     g.fillAll(Colours::grey);
 
-    float numXPixels = processor->outputImageSizeW;
-    float numYPixels = processor->outputImageSizeH;
-
     //std::cout << "got " << numXPixels << " x " << numYPixels << " size" <<std::endl;
 
-    float xHeight = getWidth()/numXPixels;
-    float yHeight = getHeight()/numYPixels;
+    float xHeight = getWidth()/processor->outputImageSizeW;
+    float yHeight = getHeight()/processor->outputImageSizeH;
 
-        for (int n = 0; n < numXPixels; n++)
+        for (int n = 0; n < processor->outputImageSizeW; n++)
         {
-            for (int m = 0; m < numYPixels; m++)
+            for (int m = 0; m < processor->outputImageSizeH; m++)
             {
                 //float c = random.nextFloat()*255;
-                float c = processor->getIm(m+(n*processor->outputImageSizeW))*255;
+                float c = processor->getIm(m+(n*processor->outputImageSizeH))*255;
                 
                 g.setColour(Colour(c,c,c));
                 g.fillRect(n*xHeight, m*yHeight, xHeight, yHeight);

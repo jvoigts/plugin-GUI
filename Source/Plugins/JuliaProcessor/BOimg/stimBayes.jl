@@ -1,11 +1,11 @@
 
-function stimBayes(nSpikes, iter)
+function stimBayes(nSpikes, iter, npix)
 global fprev;
 global xprev;
 
 fprev[iter] = sum(nSpikes);
 
-npix 	= [30;30];
+#npix 	= [30;30];
 D 		= 2;
 LB 		= ones(D,1);
 UB 		= npix;

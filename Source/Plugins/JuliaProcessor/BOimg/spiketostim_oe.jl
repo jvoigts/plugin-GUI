@@ -51,7 +51,7 @@ function oe_process!(data,image)
 			#image=image*0;		
 
 			# make stim
-			image[1:end] = stimBayes(nSpikes, iter);
+			image[1:end] = stimBayes(nSpikes, iter,[size(image,1);size(image,2)]);
 			
 			#image[1:end]=image.*0;
 
@@ -68,8 +68,8 @@ function oe_process!(data,image)
 		end;
 	end	
 
-#image[10,10]=1;
-#image[10,11]=0;
+#image[1:3:end,1:7:end]=1;
+#image[3:13:end,3:7:end]=0;
 	
 
 	return data, image;

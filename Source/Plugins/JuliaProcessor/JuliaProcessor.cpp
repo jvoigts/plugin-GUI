@@ -125,24 +125,20 @@ void JuliaProcessor::setParameter(int parameterIndex, float newValue)
 
 void JuliaProcessor::setOutputImageSize(int W, int H)
 {
-    if (W > 0 && H >0)
+    
+    if (W > 0)
     {
-        //outputImageSizeH=bufferSize;
-        printf("Setting output image size to %d X %d pixels \n", W,H);
+        printf("Setting output image width to %d  pixels \n", W);
         outputImageSizeW = W;
-        outputImageSizeH = H;
-
-        //dataHistoryBuffer->setSize(outputImageSizeW, outputImageSizeH, false, true, false);
-        free(outputImage);
-        //outputImage = malloc(W*H*sizeof(float));
-        outputImage = new double[W*H]();
-        
-        //outputImage[100]=0;
     }
-    else 
+    if (H > 0)
     {
-        printf("Image size has to be at least 1x1");
+        printf("Setting output image height to %d pixels \n", H);
+        outputImageSizeH = H;
     }
+    free(outputImage);
+    outputImage = new double[outputImageSizeW * outputImageSizeH]();
+    memset(outputImage, 0, outputImageSizeW * outputImageSizeH * sizeof(*outputImage));
 }
 
 void JuliaProcessor::run_julia_string(String juliaString)
@@ -246,8 +242,7 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
         jl_value_t *b = jl_box_int32(outputImageSizeH);
         jl_value_t *dims = jl_call2(tfunc, a, b);
 
-
-        jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage ,  dims , 0);
+        jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage , dims , 0);
 
 
         // Get array pointer
