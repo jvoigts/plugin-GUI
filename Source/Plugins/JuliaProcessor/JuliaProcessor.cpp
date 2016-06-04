@@ -172,114 +172,129 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
 	if (hasJuliaInstance)
     {
 
-    buffer.clear();
+        buffer.clear();
 
-    // populate sampled channels with spikes from sorter
-    if (midiMessages.getNumEvents() > 0)
-    {
-
-        // int m = midiMessages.getNumEvents();
-        //std::cout << m << " events received by node " << getNodeId() << std::endl;
-
-        MidiBuffer::Iterator i(midiMessages);
-        MidiMessage message(0xf4);
-
-        int samplePosition = 0;
-        i.setNextSamplePosition(samplePosition);
-
-        while (i.getNextEvent(message, samplePosition))
+        /*
+        // populate sampled channels with spikes from sorter
+        if (midiMessages.getNumEvents() > 0)
         {
 
-            const uint8* dataptr = message.getRawData();
+            // int m = midiMessages.getNumEvents();
+            //std::cout << m << " events received by node " << getNodeId() << std::endl;
 
-           // handleEvent(*dataptr, message, samplePosition);
+            MidiBuffer::Iterator i(midiMessages);
+            MidiMessage message(0xf4);
 
-            int bufferSize = message.getRawDataSize();
+            int samplePosition = 0;
+            i.setNextSamplePosition(samplePosition);
 
-            if (bufferSize > 0 && dataptr[0]==SPIKE)
+            while (i.getNextEvent(message, samplePosition))
             {
 
-                SpikeObject newSpike;
+                const uint8* dataptr = message.getRawData();
 
-                bool isValid = unpackSpike(&newSpike, dataptr, bufferSize);
+               // handleEvent(*dataptr, message, samplePosition);
 
-                if (isValid)
+                int bufferSize = message.getRawDataSize();
+
+                if (bufferSize > 0 && dataptr[0]==SPIKE)
                 {
-                    int electrodeNum = newSpike.source;
 
-                    //Electrode& e = electrodes.getReference(electrodeNum);
-                    // std::cout << electrodeNum << std::endl;
+                    SpikeObject newSpike;
 
-                    // select if spike is of interest
+                    bool isValid = unpackSpike(&newSpike, dataptr, bufferSize);
 
-                    //if (electrodeNum==1){
-                    buffer.setSample(electrodeNum,samplePosition,1);
-                    //}
+                    if (isValid)
+                    {
+                        int electrodeNum = newSpike.source;
 
+                        //Electrode& e = electrodes.getReference(electrodeNum);
+                        // std::cout << electrodeNum << std::endl;
+
+                        // select if spike is of interest
+
+                        //if (electrodeNum==1){
+                        buffer.setSample(electrodeNum,samplePosition,1);
+                        //}
+
+                    }
                 }
-
             }
+        } // if (midiMessages.getNumEvents() > 0)
+        */
+
+        // send data to julia
+    	jl_function_t *func = jl_get_function(jl_main_module, "oe_process!");    
+
+    	
+    	//for (int n = 0; n < getNumOutputs(); n++)
+        int n=0; // only operate on 1st chyannel for now - switch to 2d array later
+    	{
+
+            /*
+            {
+    	    // create 1D array of float32 type
+            jl_value_t *array_type = jl_apply_array_type(jl_float32_type, 1); // last arg is nDims
 
 
-        }
+        	float* ptr = buffer.getWritePointer(n); // to perform in-place edits to the buffer
+    		jl_array_t *x = jl_ptr_to_array_1d(array_type, ptr , buffer.getNumSamples(), 0);
+    	             
+            }
+            */
+            //jl_value_t *dims = jl_eval_string("(30,31)"); 
 
+            // make tuple for dimensions of raw neural data
+            float* ptr = buffer.getWritePointer(0); // to perform in-place edits to the buffer
+            jl_value_t *array_type_samples = jl_apply_array_type(jl_float32_type, 2);
+            jl_function_t *tfunc = jl_get_function(jl_base_module, "tuple");
+            jl_value_t *a = jl_box_int32(getNumOutputs()); // N channels
+            jl_value_t *b = jl_box_int32(buffer.getNumSamples()); // N samples
+            jl_value_t *dims = jl_call2(tfunc, b, a);
+            //dims = jl_eval_string("(16,1024)"); 
+
+            // wrap array for julia
+            jl_array_t *jl_neuralData =  jl_ptr_to_array(array_type_samples, ptr , dims , 0);
+
+
+             // make tuple for dimensions of outputImage
+            jl_value_t *array_type_im = jl_apply_array_type(jl_float64_type, 2);
+            a = jl_box_int32(outputImageSizeH);
+            b = jl_box_int32(outputImageSizeW);
+            dims = jl_call2(tfunc, a, b);
+
+            
+
+            // wrap array for julia
+            jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage , dims , 0);
+
+            // DEBUG:  
+            // Get number of dimensions
+            //int ndims = jl_array_ndims(jl_neuralData);
+            //size_t size0 = jl_array_dim(jl_neuralData,0);
+            //size_t size1 = jl_array_dim(jl_neuralData,1);
+            //printf("input size: %d %d \n", size0, size1);
+
+
+            JL_GC_PUSH2(&jl_neuralData,&jl_outputImage);
+
+    		jl_call2(func, (jl_value_t*)jl_neuralData, (jl_value_t*)jl_outputImage);
+
+            //debug
+            //size0 = jl_array_dim(jl_outputImage,0);
+            //size1 = jl_array_dim(jl_outputImage,1);
+            //printf("output size: %d %d \n", size0, size1);
+
+    		outputImage = (double*)jl_array_data(jl_outputImage); // return output image
+            
+            JL_GC_POP(); // image, and neural data (encoded spikes)
+    	}
+        // std::cout << im[0] << std::endl;
+    	
+        
+        if (jl_exception_occurred())
+            printf("julia exception: %s \n", jl_typeof_str(jl_exception_occurred()));
     }
-
-    // send data to julia
-	jl_function_t *func = jl_get_function(jl_main_module, "oe_process!");    
-
-	// create 1D array of float32 type
-	jl_value_t *array_type = jl_apply_array_type(jl_float32_type, 1); // last arg is nDims
-
-	//for (int n = 0; n < getNumOutputs(); n++)
-    int n=0; // only operate on 1st chyannel for now - switch to 2d array later
-	{
-		float* ptr = buffer.getWritePointer(n); // to perform in-place edits to the buffer
-		jl_array_t *x = jl_ptr_to_array_1d(array_type, ptr , buffer.getNumSamples(), 0);
-	
-
-         jl_value_t *array_type_im = jl_apply_array_type(jl_float64_type, 2);
-        
-   
-        //jl_value_t *dims = jl_eval_string("(30,31)");
-
-         // make tuple for dimensions
-        jl_function_t *tfunc = jl_get_function(jl_base_module, "tuple");
-        jl_value_t *a = jl_box_int32(outputImageSizeH);
-        jl_value_t *b = jl_box_int32(outputImageSizeW);
-        jl_value_t *dims = jl_call2(tfunc, a, b);
-
-        // wrap array for julia
-        jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage , dims , 0);
-
-
-        // DEBUG:  
-        // Get number of dimensions
-        //int ndims = jl_array_ndims(jl_outputImage);
-        //size_t size0 = jl_array_dim(jl_outputImage,0);
-        //size_t size1 = jl_array_dim(jl_outputImage,1);
-        //printf("input size: %d %d \n", size0, size1);
-
-
-        JL_GC_PUSH2(&x,&jl_outputImage);
-
-		jl_call2(func, (jl_value_t*)x, (jl_value_t*)jl_outputImage);
-
-        //debug
-        //size0 = jl_array_dim(jl_outputImage,0);
-        //size1 = jl_array_dim(jl_outputImage,1);
-        //printf("output size: %d %d \n", size0, size1);
-
-		outputImage = (double*)jl_array_data(jl_outputImage); // return output image
-        
-        JL_GC_POP(); // image, and neural data (encoded spikes)
-	}
-    // std::cout << im[0] << std::endl;
-	
-    
-    if (jl_exception_occurred())
-        printf("julia exception: %s \n", jl_typeof_str(jl_exception_occurred()));
-}
 
 }
 
