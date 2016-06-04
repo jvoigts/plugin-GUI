@@ -101,6 +101,12 @@ void JuliaProcessor::setFile(String fullpath)
 
 	String juliaString = "include(\"" + filePath + "\")";
 	run_julia_string(juliaString);
+
+    // for some reaspn, julia generates an outofmemory error if we start printing debug messages from the process function later, 
+    // but then recovers after a few calls, about 100ms after the 1st call
+    // - this simple print command emulates this and sidesteps the issue - this will likely be patched in some future julia version
+    run_julia_string("println(\"Julia instance running\");");
+
 }
 
 void JuliaProcessor::reloadFile()
@@ -247,18 +253,22 @@ void JuliaProcessor::process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages
         jl_array_t *jl_outputImage =  jl_ptr_to_array(array_type_im, outputImage , dims , 0);
 
 
-        // Get array pointer
-        //double *p = (double*)jl_array_data(x);
+        // DEBUG:  
         // Get number of dimensions
-        //int ndims = jl_array_ndims(x);
-        // Get the size of the i-th dim
-        //size_t size0 = jl_array_dim(x,0);
-        //size_t size1 = jl_array_dim(x,1);
+        //int ndims = jl_array_ndims(jl_outputImage);
+        //size_t size0 = jl_array_dim(jl_outputImage,0);
+        //size_t size1 = jl_array_dim(jl_outputImage,1);
+        //printf("input size: %d %d \n", size0, size1);
 
 
         JL_GC_PUSH2(&x,&jl_outputImage);
 
 		jl_call2(func, (jl_value_t*)x, (jl_value_t*)jl_outputImage);
+
+        //debug
+        //size0 = jl_array_dim(jl_outputImage,0);
+        //size1 = jl_array_dim(jl_outputImage,1);
+        //printf("output size: %d %d \n", size0, size1);
 
 		outputImage = (double*)jl_array_data(jl_outputImage); // return output image
         

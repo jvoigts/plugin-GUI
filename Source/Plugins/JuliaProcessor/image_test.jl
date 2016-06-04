@@ -1,7 +1,11 @@
 
 function oe_process!(data,image)
 
-@printf "  image (%d x %d)\n"  size(image,1) size(image,2);
+
+#@printf "image (%d x %d)\n"  size(image,1) size(image,2);
+println("image (",size(image,1)," x ",size(image,2),")") ;
+
+x=size(image,1);
 
 for i=1:size(image,1)
 	for j=1:size(image,2)
